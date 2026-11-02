@@ -1,0 +1,10 @@
+import mongoose, { Schema } from 'mongoose';
+const userSchema = new Schema({ name:{type:String,required:true}, email:{type:String,required:true,unique:true,index:true}, passwordHash:{type:String,required:true} },{timestamps:true});
+const caseSchema = new Schema({ ownerId:{type:Schema.Types.ObjectId,ref:'User',required:true,index:true}, title:String, scenarioPrompt:String, genre:String, difficulty:String, caseLength:String, status:{type:String,enum:['generating','ready','in_progress','completed','failed'],default:'generating',index:true}, publicContent:Schema.Types.Mixed, privateSolution:Schema.Types.Mixed, generation:{model:String,promptVersion:String,generatedAt:Date,retryCount:{type:Number,default:0},sanitizedFailureCode:String,idempotencyKey:String} },{timestamps:true});
+caseSchema.index({ownerId:1,status:1,createdAt:-1});
+caseSchema.index({ownerId:1,'generation.idempotencyKey':1},{unique:true,partialFilterExpression:{'generation.idempotencyKey':{$type:'string'}}});
+const progressSchema = new Schema({ caseId:{type:Schema.Types.ObjectId,ref:'Case',required:true}, userId:{type:Schema.Types.ObjectId,ref:'User',required:true}, reviewedEvidenceIds:{type:[String],default:[]}, notes:{type:String,default:''}, revealedHintOrders:{type:[Number],default:[]}, status:{type:String,enum:['not_started','in_progress','solved','incorrect','revealed'],default:'not_started'}, accusedSuspectId:String, isCorrect:Boolean, submittedAt:Date, completedAt:Date },{timestamps:true});
+progressSchema.index({caseId:1,userId:1},{unique:true});
+export const User = mongoose.models.User || mongoose.model('User',userSchema);
+export const Case = mongoose.models.Case || mongoose.model('Case',caseSchema);
+export const Progress = mongoose.models.Progress || mongoose.model('Progress',progressSchema);
